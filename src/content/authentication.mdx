@@ -1,6 +1,6 @@
 ---
 title: Authentication
-description: Create GitLite access tokens, send them in the Authorization header, and choose token scopes.
+description: Authenticate with the GitLite API. Create access tokens, send them in the Authorization header, and choose token scopes.
 lastVerified: 2026-09-15
 verifiedVersion: GitLite 1.27.3
 sources:
@@ -52,8 +52,7 @@ Requests without credentials to an endpoint that requires them return `401` with
 
 ## Create a token with the API
 
-You can create a token with HTTP basic authentication using your username and
-password. This is the only token endpoint that requires basic authentication.
+Create a token with HTTP basic authentication, using your username and password.
 
 <Tabs>
   <Tab title="curl">
