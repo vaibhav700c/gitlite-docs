@@ -1,0 +1,119 @@
+---
+title: Pagination
+description: Read long lists from the GitLite API with page and limit, and use the Link and X-Total-Count headers.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - modules/setting/api.go
+  - services/convert/utils.go
+  - routers/api/v1/utils/page.go
+  - services/context/api.go
+  - services/context/base.go
+  - custom/conf/app.example.ini
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+List endpoints return one page of results at a time. You choose the page with
+`page` and the page size with `limit`, and GitLite tells you how many items exist
+in response headers.
+
+## Query parameters
+
+| Parameter | Type | Default | Behavior |
+| --- | --- | --- | --- |
+| `page` | integer | `1` | 1-based page number. Values below `1` are treated as `1`. |
+| `limit` | integer | `30` | Items per page. Values of `0` or less use the default of `30`. Values above `50` are reduced to `50`. |
+
+The default (`30`) and the maximum (`50`) come from the server's
+`[api] DEFAULT_PAGING_NUM` and `[api] MAX_RESPONSE_ITEMS` settings. Operators can
+change them, so read the effective values from the server when it matters:
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s http://localhost:3000/api/v1/settings/api \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/settings/api', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    const { default_paging_num, max_response_items } = await res.json()
+    console.log({ default_paging_num, max_response_items })
+    ```
+  </Tab>
+</Tabs>
+
+On a server with default settings the response is:
+
+```json
+{
+  "max_response_items": 50,
+  "default_paging_num": 30,
+  "default_git_trees_per_page": 1000,
+  "default_max_blob_size": 10485760,
+  "default_max_response_size": 104857600
+}
+```
+
+<Tip>
+  A `limit` above the maximum does not return an error. GitLite silently returns
+  at most `50` items, so do not assume a short page means you reached the end.
+  Use the headers below instead.
+</Tip>
+
+## Response headers
+
+| Header | Example | Meaning |
+| --- | --- | --- |
+| `X-Total-Count` | `35` | Total number of items across all pages. |
+| `Link` | `<http://localhost:3000/api/v1/user/repos?page=2>; rel="next"` | URLs for the `next`, `last`, `first`, and `prev` pages. Relations that do not apply are omitted. |
+| `Access-Control-Expose-Headers` | `Link, X-Total-Count` | Lets browser clients read the two headers above. |
+
+`X-Total-Count` is set on list endpoints that count their results. `Link` is set
+only when there is more than one page.
+
+For example, a user with 35 repositories requesting `/user/repos` with no
+parameters receives 30 repositories and these headers:
+
+```text
+X-Total-Count: 35
+Link: <http://localhost:3000/api/v1/user/repos?page=2>; rel="next",<http://localhost:3000/api/v1/user/repos?page=2>; rel="last"
+```
+
+## Read every page
+
+Follow `rel="next"` until it is absent.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -D - -o /dev/null "http://localhost:3000/api/v1/user/repos?page=1&limit=10" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    let url = 'http://localhost:3000/api/v1/user/repos?limit=50'
+    const all = []
+    while (url) {
+      const res = await fetch(url, {
+        headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      })
+      all.push(...(await res.json()))
+      url = res.headers.get('link')?.match(/<([^>]+)>;\s*rel="next"/)?.[1]
+    }
+    console.log(`fetched ${all.length} repositories`)
+    ```
+  </Tab>
+</Tabs>
+
+The `curl` command prints only the response headers, so you can inspect
+`X-Total-Count` and `Link` directly.
+
+## Next steps
+
+- [Rate limits and response size](/guides/rate-limits) covers other server-side caps.
+- [Configuration: `[api]`](/reference/configuration-api) lists every setting that controls paging.

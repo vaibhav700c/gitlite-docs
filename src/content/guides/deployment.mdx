@@ -1,0 +1,87 @@
+---
+title: "Guide: Deployment"
+description: Build the GitLite binary from source and run it with SQLite for development or a small team.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - Makefile
+  - cmd/web.go
+  - cmd/migrate.go
+  - cmd/admin_user_create.go
+  - custom/conf/app.example.ini
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+GitLite ships as a single binary. This guide builds it from source and runs it with
+SQLite, which is enough for development and for the examples in these docs.
+
+## Before you begin
+
+- Go (the version in `go.mod` or newer)
+- Git 2.0 or later
+- `make`
+
+## Build the binary
+
+```bash
+git clone https://github.com/vaibhav700c/gitlite.git
+cd gitlite
+TAGS="sqlite sqlite_unlock_notify" make backend
+```
+
+The build writes a `gitea` executable to the repository root. The binary keeps its
+upstream name because GitLite renames only user-visible strings.
+
+`make backend` does not build the web frontend. The API works without it. For the
+full web UI, run `make build` instead, which also requires Node.js and `pnpm`.
+
+## Configure the server
+
+Create a working directory and an `app.ini`:
+
+```ini
+APP_NAME = GitLite
+RUN_MODE = prod
+WORK_PATH = /srv/gitlite
+
+[server]
+HTTP_PORT = 3000
+ROOT_URL = http://localhost:3000/
+DISABLE_SSH = true
+; path to the cloned repository when running a build without embedded assets
+STATIC_ROOT_PATH = /path/to/gitlite
+
+[database]
+DB_TYPE = sqlite3
+PATH = /srv/gitlite/data/gitlite.db
+
+[security]
+INSTALL_LOCK = true
+```
+
+Save it as `/srv/gitlite/custom/conf/app.ini`. `INSTALL_LOCK = true` skips the
+web installer. Every other setting is documented in `custom/conf/app.example.ini`.
+
+## Initialize and start
+
+```bash
+cd /srv/gitlite
+/path/to/gitlite/gitea migrate -c custom/conf/app.ini
+/path/to/gitlite/gitea admin user create -c custom/conf/app.ini \
+  --username admin --email admin@example.com --password 'change-me-now' --admin
+/path/to/gitlite/gitea web -c custom/conf/app.ini
+```
+
+## Verify the server
+
+```bash
+curl -s http://localhost:3000/api/v1/version
+```
+
+A running server returns its version, for example `{"version":"1.27.3"}`. This
+endpoint does not require authentication.
+
+## Next steps
+
+Create an access token and make your first authenticated call in the
+[Quickstart](/quickstart).

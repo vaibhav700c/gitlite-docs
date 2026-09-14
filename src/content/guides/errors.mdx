@@ -1,0 +1,121 @@
+---
+title: "Guide: Handling errors"
+description: Interpret GitLite API status codes, error bodies, and authentication failures, and decide when to retry.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - services/context/api.go
+  - routers/api/v1/api.go
+  - services/auth/oauth2.go
+  - services/auth/basic.go
+  - templates/swagger/v1_json.tmpl
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+GitLite reports failures with an HTTP status code and a small JSON body. Your
+client should branch on the status code and log the `message`.
+
+## Error body
+
+Most errors use this shape:
+
+```json
+{
+  "message": "not found",
+  "url": "http://localhost:3000/api/swagger"
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `message` | Human-readable reason. Treat it as diagnostic text; the wording can change between releases. |
+| `url` | Link to the server's API documentation (`/api/swagger`). |
+
+Validation errors (`422`) use the same two fields. For internal errors (`500`)
+on a production server, `message` is empty unless you are a site admin.
+
+## Status codes
+
+| Status | When GitLite returns it | What to do |
+| --- | --- | --- |
+| `400` | The request is malformed, or a value conflicts, for example a duplicate token name. | Fix the request. Do not retry unchanged. |
+| `401` | Credentials are missing or invalid. | See [Authentication failures](#authentication-failures). |
+| `403` | You are authenticated but not allowed, including a token that lacks a scope. | Grant the scope or use an account with access. |
+| `404` | The resource does not exist, or you cannot see it. | Check the path. Private resources return `404`, not `403`, to users without access. |
+| `409` | The resource already exists, for example a repository name. | Choose another name, or read the existing resource. |
+| `422` | Body validation failed. | Read `message` for the field that failed. |
+| `423` | The repository is archived and cannot be changed. | Unarchive it first. |
+| `500` | Server error. | Retry with backoff, then contact the operator. |
+
+## Authentication failures
+
+Every authentication failure returns `401` with one of these messages.
+
+| Request | `message` |
+| --- | --- |
+| No `Authorization` header on an endpoint that requires a token | `token is required` |
+| `Authorization: token <value>` where the token does not exist | `invalid username, password or token` |
+| Basic authentication with a wrong password | `invalid username, password or token` |
+
+Reproduce both cases:
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -w "\n%{http_code}\n" http://localhost:3000/api/v1/user
+    curl -s -w "\n%{http_code}\n" http://localhost:3000/api/v1/user \
+      -H "Authorization: token 0000000000000000000000000000000000000000"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    for (const headers of [{}, { Authorization: 'token 0000000000000000000000000000000000000000' }]) {
+      const res = await fetch('http://localhost:3000/api/v1/user', { headers })
+      console.log(res.status, (await res.json()).message)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Expected output: `401` with `token is required`, then `401` with
+`invalid username, password or token`.
+
+A valid token that lacks a scope returns `403`, not `401`. See
+[Choose scopes](/authentication#choose-scopes).
+
+## Handle errors in a client
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    status=$(curl -s -o response.json -w "%{http_code}" \
+      http://localhost:3000/api/v1/repos/$GITLITE_USER/does-not-exist \
+      -H "Authorization: token $GITLITE_TOKEN")
+    if [ "$status" -ge 400 ]; then echo "GitLite error $status: $(cat response.json)"; fi
+    rm -f response.json
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    async function gitlite(path, init = {}) {
+      const res = await fetch(`http://localhost:3000/api/v1${path}`, {
+        ...init,
+        headers: { Authorization: `token ${process.env.GITLITE_TOKEN}`, ...init.headers },
+      })
+      if (!res.ok) {
+        const { message } = await res.json().catch(() => ({}))
+        throw new Error(`GitLite ${res.status}: ${message ?? res.statusText}`)
+      }
+      return res.status === 204 ? null : res.json()
+    }
+
+    try {
+      await gitlite(`/repos/${process.env.GITLITE_USER}/does-not-exist`)
+    } catch (err) {
+      console.log(err.message)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The example prints `GitLite error 404` and `GitLite 404: not found`.

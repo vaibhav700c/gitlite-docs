@@ -1,0 +1,184 @@
+---
+title: "API reference: Repositories"
+description: List, create, read, and update repositories with the GitLite REST API.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - routers/api/v1/repo/repo.go
+  - routers/api/v1/user/repo.go
+  - routers/api/v1/utils/page.go
+  - services/auth/oauth2.go
+  - modules/setting/api.go
+  - templates/swagger/v1_json.tmpl
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+All endpoints on this page are relative to `http://localhost:3000/api/v1` and
+require `Authorization: token <token>`. See [Authentication](/authentication).
+
+| Method | Path | Operation | Scope |
+| --- | --- | --- | --- |
+| `GET` | `/user/repos` | List your repositories | `read:user` and `read:repository` |
+| `POST` | `/user/repos` | Create a repository | `read:user` and `write:repository` |
+| `GET` | `/repos/{owner}/{repo}` | Get a repository | `read:repository` |
+| `PATCH` | `/repos/{owner}/{repo}` | Edit a repository | `write:repository` |
+| `DELETE` | `/repos/{owner}/{repo}` | Delete a repository | `write:repository` |
+
+The examples use a repository named `hello-gitlite` owned by the user in
+`GITLITE_USER`.
+
+## List your repositories
+
+`GET /user/repos`
+
+| Query parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `page` | integer | `1` | Page number. |
+| `limit` | integer | `30` | Page size, at most `50`. See [Pagination](/pagination). |
+
+Returns `200` with an array of `Repository` objects. The response carries
+`X-Total-Count` and, when there is more than one page, `Link`.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s "http://localhost:3000/api/v1/user/repos?limit=5" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/user/repos?limit=5', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    const repos = await res.json()
+    console.log(res.headers.get('x-total-count'), repos.map((r) => r.full_name))
+    ```
+  </Tab>
+</Tabs>
+
+## Create a repository
+
+`POST /user/repos`
+
+| Body field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | string | yes | Repository name, unique for the owner. |
+| `description` | string | no | Short description. |
+| `private` | boolean | no | Whether the repository is private. Defaults to `false`. |
+| `auto_init` | boolean | no | Create an initial commit with a README. |
+| `default_branch` | string | no | Default branch name when `auto_init` is `true`. |
+
+| Status | Meaning |
+| --- | --- |
+| `201` | Repository created. |
+| `409` | A repository with the same name already exists. |
+| `422` | Validation failed, for example an invalid name. |
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -X POST http://localhost:3000/api/v1/user/repos \
+      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "reference-repo", "description": "Created from the API reference", "private": true}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/user/repos', {
+      method: 'POST',
+      headers: {
+        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'reference-repo-js', private: true }),
+    })
+    console.log(res.status, (await res.json()).full_name)
+    ```
+  </Tab>
+</Tabs>
+
+## Get a repository
+
+`GET /repos/{owner}/{repo}`
+
+Returns `200` with a `Repository` object, or `404` when the repository does not
+exist or your token cannot see it.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite`, {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    const repo = await res.json()
+    console.log(res.status, repo.full_name, repo.default_branch)
+    ```
+  </Tab>
+</Tabs>
+
+## Edit a repository
+
+`PATCH /repos/{owner}/{repo}`
+
+Send only the fields you want to change, such as `description`, `private`,
+`website`, `default_branch`, `has_issues`, or `archived`. Returns `200` with the
+updated `Repository`.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -X PATCH "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite" \
+      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"description": "Updated from the API"}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ website: 'https://example.com' }),
+    })
+    console.log(res.status, (await res.json()).website)
+    ```
+  </Tab>
+</Tabs>
+
+## Delete a repository
+
+`DELETE /repos/{owner}/{repo}` returns `204` with an empty body. Deletion is
+permanent and removes the Git data, issues, and wiki.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -o /dev/null -w "%{http_code}\n" -X DELETE \
+      "http://localhost:3000/api/v1/repos/$GITLITE_USER/reference-repo" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/reference-repo-js`, {
+      method: 'DELETE',
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    console.log(res.status)
+    ```
+  </Tab>
+</Tabs>

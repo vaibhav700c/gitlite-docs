@@ -1,0 +1,75 @@
+---
+title: "Guide: Rate limits and response size"
+description: Understand how GitLite caps page size and response size, and how to write clients that stay within those caps.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - modules/setting/api.go
+  - services/convert/utils.go
+  - routers/api/v1/settings/settings.go
+  - custom/conf/app.example.ini
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+GitLite limits how much data one API response can contain. It does not limit how
+many requests you can send.
+
+## Request rate
+
+GitLite has no built-in API request rate limit, and it does not send
+`X-RateLimit-*` headers. If your server sits behind a reverse proxy or gateway,
+that component may enforce its own limits; ask your operator.
+
+Even without a limit, send list requests sequentially and cache results you
+reuse. A client that fetches every page of every repository in parallel can
+overload a small server.
+
+## Items per response
+
+List endpoints return at most `MAX_RESPONSE_ITEMS` items per request. On a server
+with default settings:
+
+| Setting | Default | Effect on clients |
+| --- | --- | --- |
+| `[api] MAX_RESPONSE_ITEMS` | `50` | A `limit` above `50` is reduced to `50` without an error. |
+| `[api] DEFAULT_PAGING_NUM` | `30` | Requests without `limit` receive up to `30` items. |
+
+Because the cap is silent, never infer "no more data" from a page that is shorter
+than the `limit` you asked for. Use `X-Total-Count` or the `Link` header as
+described in [Pagination](/pagination).
+
+Confirm the cap on your server:
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s "http://localhost:3000/api/v1/user/repos?limit=1000" \
+      -H "Authorization: token $GITLITE_TOKEN" | grep -o '"full_name"' | wc -l
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/user/repos?limit=1000', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    const repos = await res.json()
+    console.log(`asked for 1000, received ${repos.length} of ${res.headers.get('x-total-count')}`)
+    ```
+  </Tab>
+</Tabs>
+
+For a user with 35 repositories, both examples report 35 items: all of them fit
+under the cap of 50. With more than 50 repositories, the response stops at 50.
+
+## Git data size
+
+Endpoints that return Git objects have their own caps:
+
+| Setting | Default | Applies to |
+| --- | --- | --- |
+| `[api] DEFAULT_GIT_TREES_PER_PAGE` | `1000` | Default and maximum entries per page from the Git trees API. |
+| `[api] DEFAULT_MAX_BLOB_SIZE` | `10485760` (10 MiB) | Largest single blob returned by the blobs API. |
+| `[api] DEFAULT_MAX_RESPONSE_SIZE` | `104857600` (100 MiB) | Largest combined size of all blobs returned by the files API. |
+
+All five values are readable by any client at `GET /api/v1/settings/api`. Operators
+change them in `app.ini`; see [Configuration: `[api]`](/reference/configuration-api).

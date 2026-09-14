@@ -1,0 +1,130 @@
+---
+title: Authentication
+description: Create GitLite access tokens, send them in the Authorization header, and choose token scopes.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - services/auth/oauth2.go
+  - services/auth/basic.go
+  - modules/auth/httpauth/httpauth.go
+  - models/auth/access_token_scope.go
+  - modules/setting/security.go
+  - routers/api/v1/api.go
+  - templates/swagger/v1_json.tmpl
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+Most GitLite API endpoints require an access token. You create a token for your
+user, grant it scopes, and send it with every request.
+
+## Send a token in the Authorization header
+
+Put the word `token`, a space, and the token value in the `Authorization` header:
+
+```text
+Authorization: token 9a7f0c2e...
+```
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s http://localhost:3000/api/v1/user \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/user', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    console.log(res.status, (await res.json()).login)
+    ```
+  </Tab>
+</Tabs>
+
+The API spec describes this scheme as `AuthorizationHeaderToken`: "API tokens must
+be prepended with `token` followed by a space." GitLite also accepts `Bearer` in
+place of `token`, which is how OAuth2 clients usually send access tokens. Both
+prefixes are case-insensitive and behave identically.
+
+Requests without credentials to an endpoint that requires them return `401` with
+`"message": "token is required"`.
+
+## Create a token with the API
+
+You can create a token with HTTP basic authentication using your username and
+password. This is the only token endpoint that requires basic authentication.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -X POST "http://localhost:3000/api/v1/users/$GITLITE_USER/tokens" \
+      -u "$GITLITE_USER:$GITLITE_PASSWORD" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "ci-token", "scopes": ["read:repository", "write:issue"]}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const { GITLITE_USER, GITLITE_PASSWORD } = process.env
+    const basic = Buffer.from(`${GITLITE_USER}:${GITLITE_PASSWORD}`).toString('base64')
+    const res = await fetch(`http://localhost:3000/api/v1/users/${GITLITE_USER}/tokens`, {
+      method: 'POST',
+      headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'ci-token-js', scopes: ['read:repository', 'write:issue'] }),
+    })
+    console.log(res.status, (await res.json()).token_last_eight)
+    ```
+  </Tab>
+</Tabs>
+
+A `201 Created` response includes `sha1`, the token value. GitLite never returns
+it again; later reads show only `token_last_eight`. Token names must be unique per
+user, so a second request with the same `name` returns `400`.
+
+If your account has two-factor authentication enabled, also send the current
+one-time code in the `X-GITEA-OTP` header.
+
+## Choose scopes
+
+A token can only reach the API categories its scopes allow. Each category has a
+`read:` and a `write:` scope, and `write:` includes `read:`.
+
+| Category | Scopes | Covers |
+| --- | --- | --- |
+| `activitypub` | `read:activitypub`, `write:activitypub` | ActivityPub endpoints |
+| `admin` | `read:admin`, `write:admin` | `/admin` endpoints; requires a site admin |
+| `issue` | `read:issue`, `write:issue` | Issues, pull request comments, labels, milestones |
+| `notification` | `read:notification`, `write:notification` | Notifications |
+| `organization` | `read:organization`, `write:organization` | Organizations and teams |
+| `package` | `read:package`, `write:package` | Package registry |
+| `repository` | `read:repository`, `write:repository` | Repositories, files, branches, hooks |
+| `user` | `read:user`, `write:user` | The authenticated user and their settings |
+
+Two special scopes exist:
+
+- `all` grants every category at `write` level.
+- `public-only` restricts the token to public repositories and organizations,
+  combined with the other scopes you grant.
+
+A request outside a token's scopes returns `403` and names the missing scope:
+
+```json
+{
+  "message": "token does not have at least one of required scope(s), required=[write:user], token scope=read:user",
+  "url": "http://localhost:3000/api/swagger"
+}
+```
+
+## Other authentication methods
+
+| Method | How to send it | Notes |
+| --- | --- | --- |
+| Basic authentication | `curl -u user:password` | Supported for API calls, but prefer tokens. |
+| Query parameter | `?token=` or `?access_token=` | Accepted by default and marked deprecated in the API spec. Operators can reject it with `[security] DISABLE_QUERY_AUTH_TOKEN = true`. Avoid it: URLs end up in proxy and server logs. |
+| Sudo | `Sudo: <username>` header or `?sudo=` | Site admins only. Performs the request as another user. |
+
+## Next steps
+
+- [Handling errors](/guides/errors) explains every `401` and `403` body.
+- [Pagination](/pagination) shows how to read long lists with your token.

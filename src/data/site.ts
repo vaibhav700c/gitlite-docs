@@ -160,12 +160,12 @@ const brandPresets: Record<BrandPresetKey, BrandConfig> = {
 const brandPreset: BrandPresetKey = 'primary'
 
 export const siteConfig: SiteConfig = {
-  name: 'Gitlite Docs',
+  name: 'GitLite Docs',
   description:
-    'Documentation for Gitlite Docs.',
-  repoUrl: '',
+    'API documentation for GitLite, a self-hosted Git service forked from Gitea.',
+  repoUrl: 'https://github.com/vaibhav700c/gitlite-docs',
   links: [
-    { label: 'Get started', href: '/quickstart' },
+    { label: 'Quickstart', href: '/quickstart' },
     { label: 'Changelog', href: '/changelog' },
   ],
   brand: brandPresets[brandPreset],

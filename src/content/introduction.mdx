@@ -1,45 +1,58 @@
 ---
 title: Introduction
-description: Give readers a clear path from their first question to a result they can verify.
+description: GitLite is a self-hosted Git service with a REST API. Start here to find the right guide.
 mode: home
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - NOTICE.md
+  - routers/api/v1/api.go
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
 ---
 
 <Hero
-  title="Build documentation around the reader"
-  subtitle="Start with a useful first result, organize what follows, and publish every format from one reviewable source."
-  primaryLabel="Get started"
+  title="GitLite API documentation"
+  subtitle="Make your first authenticated call, page through results, and handle errors against a self-hosted GitLite server."
+  primaryLabel="Make your first call"
   primaryHref="/quickstart"
-  secondaryLabel="Publish your docs"
-  secondaryHref="/guides/create-a-site"
+  secondaryLabel="Authentication"
+  secondaryHref="/authentication"
 />
 
-## Build the reader journey
+## What GitLite is
 
-Begin with the task that brings most readers to your documentation, then make
-the next useful step obvious.
+GitLite is a fork of [Gitea](https://github.com/go-gitea/gitea), an MIT-licensed,
+self-hosted Git service, taken at Gitea `v1.27.3`. GitLite is not affiliated with
+or endorsed by the Gitea project. The fork and every change made to it are listed
+in `NOTICE.md` in the [GitLite repository](https://github.com/vaibhav700c/gitlite).
 
-<CardGroup cols="2">
-  <Card title="Write your quickstart" icon="party-horn" href="/quickstart">
-    Turn prerequisites, setup, one realistic task, and verification into a short path.
-  </Card>
-  <Card title="Organize your navigation" icon="grid-round" href="/customization">
-    Group related tasks and references around how people use your product.
-  </Card>
-  <Card title="Document your API" icon="code-simple" href="/api">
-    Replace `openapi.yaml` to publish browsable endpoint docs with a live playground.
-  </Card>
-  <Card title="Learn the Thally workflow" icon="wrench" href="/guides/create-a-site">
-    Create, publish, and update sites from the Cloud dashboard, the CLI, or your AI tools.
-  </Card>
-</CardGroup>
+GitLite exists as the product behind this documentation site. The documentation
+system, not the fork, is the work this project demonstrates.
 
-## Publish from one source
+## Who these docs are for
 
-Thally turns the same reviewed content into HTML, search, agent discovery files,
-Markdown mirrors, and a read-only MCP surface — so people and AI tools read the
-same, current answer. Add only the locales your readers need.
+- **Integrators** who call the REST API at `/api/v1` from scripts, CI, or applications.
+- **Operators** who run a GitLite server and tune its `app.ini`.
 
-<Note type="info" title="Start with the product, not the template">
-  Replace this page with the questions, terminology, and workflows your readers
-  already use. Keep `docs.json` focused on the path between those tasks.
-</Note>
+## Find your path
+
+| You want to | Read |
+| --- | --- |
+| Make an authenticated request in one minute | [Quickstart](/quickstart) |
+| Create tokens and choose scopes | [Authentication](/authentication) |
+| Read more than one page of results | [Pagination](/pagination) |
+| Work with repositories, issues, or organizations | [API reference](/api/repositories) |
+| Understand `401`, `403`, `404`, and `422` responses | [Handling errors](/guides/errors) |
+| Tune page size and response limits | [Configuration: `[api]`](/reference/configuration-api) |
+
+## Conventions used in these docs
+
+Every example targets a local server at `http://localhost:3000/api/v1` and reads
+your token from the `GITLITE_TOKEN` environment variable:
+
+```bash
+export GITLITE_TOKEN="<your 40-character token>"
+```
+
+Each example is shown as a `curl` command and as JavaScript that runs on Node.js 18
+or later with no extra packages.

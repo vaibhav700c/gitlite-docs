@@ -1,15 +1,26 @@
 ---
 title: Changelog
-description: Record product changes that alter how readers use the documented experience.
+description: Release history for GitLite and for this documentation site.
+lastVerified: 2026-09-15
 ---
 
-## v0.1.0
+Entries are written by the GitLite maintainers. Each entry leads with the impact
+on API clients.
 
-The first published version of this documentation.
+## GitLite 1.27.3 — 2026-09-15
 
-- A task-focused introduction and quickstart
-- Browsable API documentation generated from `openapi.yaml`
-- Agent-readable discovery files and a read-only MCP endpoint
+Initial GitLite release, forked from Gitea `v1.27.3`.
 
-Replace this entry with changes your readers need to understand. Lead with the
-impact, then link to the guide or reference that explains the new behavior.
+- The API explorer title is now **GitLite API**, and the default `APP_NAME` is
+  `GitLite`.
+- No API behavior changed from upstream. Authentication uses
+  `Authorization: token <token>`, and list endpoints default to 30 items per page
+  with a maximum of 50. See [Authentication](/authentication) and
+  [Pagination](/pagination).
+
+## Documentation — 2026-09-15
+
+- First published version: quickstart, authentication, pagination, three API
+  reference pages, four guides, and the `[api]` configuration reference.
+- Every `curl` and JavaScript example was run against GitLite `1.27.3` before
+  publishing.

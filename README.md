@@ -1,62 +1,48 @@
-# Thally Starter
+# GitLite Docs
 
-A production-ready documentation site built with the open-source Thally runtime.
-Use this repository as a GitHub template or clone it directly, then replace the
-starter content with documentation for your product.
+**The product documented here is [GitLite](https://github.com/vaibhav700c/gitlite), a fork of
+[Gitea](https://github.com/go-gitea/gitea), an existing MIT-licensed open-source project.
+GitLite is not affiliated with or endorsed by Gitea. What this project built is the
+documentation system in this repository and its Thally Track integration, which detects
+product changes in GitLite and opens evidence-backed documentation pull requests.**
 
-Thally is the product knowledge layer for software teams. This starter is its
-portable publishing foundation: your content stays in Git, and the same source
-can serve people, search engines, and AI tools.
+Built for the Thally Sync Hackathon 2026, "Keep Product Knowledge Current" track.
 
-This is the canonical complete template consumed by Thally Cloud, the CLI, and
-the MCP server. Runtime code is authored once in
-[`thallylabs/thally`](https://github.com/thallylabs/thally), then generated into
-this repository as a pinned, byte-identical snapshot. Do not manually repeat a
-runtime fix in both repositories.
+## What is in this repository
 
-This README covers the portable starter, not the full managed platform. The
-sole production architecture authority is
-[`thally-cloud/ARCHITECTURE.md`](https://github.com/thallylabs/thally-cloud/blob/main/ARCHITECTURE.md),
-available to maintainers with access to the private repository. The CLI, MCP,
-and Cloud creation flows consume an exact promoted scaffold release rather
-than treating the mutable `main` branch as a release identity.
+| Path | Purpose |
+| --- | --- |
+| `src/content/` | 13 MDX pages: quickstart, authentication, pagination, three API reference pages, four guides, `[api]` configuration reference, changelog, introduction. |
+| `docs.json` | Navigation (Getting Started, Guides, Reference) and site features. |
+| `openapi.yaml` | Subset of the GitLite OpenAPI spec for the documented endpoints, extracted with `verify/extract-openapi.py`. |
+| `verify/` | Runs every `curl` and JavaScript example against a fresh, seeded GitLite server. |
 
-## Run locally
+Every page carries `lastVerified`, `verifiedVersion`, and internal `sources` /
+`verifiedCommit` frontmatter that point at the GitLite source files and commit the
+page was checked against. The internal keys are stripped from every public output.
+
+## Verify the examples
+
+Build GitLite first (`TAGS="sqlite sqlite_unlock_notify" make backend` in a sibling
+`gitlite` checkout), then:
+
+```bash
+verify/verify.sh before ../gitlite
+```
+
+The script starts a throwaway server on port 3000, seeds a user, token, repositories,
+an issue, and an organization, runs every sample in navigation order, and writes
+`verify/report-<label>.md`. Pages that document failures (`guides/errors`) may
+return `401` and `404`; every other sample must return `2xx`.
+
+## Run the site locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3040](http://localhost:3040). The next available port is
-used automatically when 3040 is occupied.
-
-## Make it yours
-
-- Edit pages in `src/content/`.
-- Organize navigation and features in `docs.json`.
-- Set the product name, links, and versioned brand defaults in `src/data/site.ts`.
-- Replace `openapi.yaml` with your API specification.
-- Add logos or favicons in `public/` and reference them from your site settings.
-
-`starter-release.json` records the immutable starter and runtime version used
-to create the site. Keep it in the repository so `thally starter update` can
-plan framework updates without overwriting your content or portable settings.
-
-`thally starter update` performs a three-way comparison between the recorded
-previous scaffold, the promoted target scaffold, and your current project. It
-updates unchanged framework-owned files, preserves user-owned files, and stops
-for manual review when those contracts overlap. The command is a dry run until
-you pass `--apply`.
-
-Maintainers update the generated runtime snapshot through the **Sync Thally
-runtime** workflow. CI rejects a changed pin without matching files, changed
-files without a matching pin, missing files, and stale runtime files.
-
-Content icons are neutral by default. Set `appearance.contentIcons` to `accent`
-in `docs.json`, or add `iconColor="accent"` to an individual card or tile.
-Public page URLs ending in `.md` are disabled by default; enable them explicitly
-with `markdown.enabled` when that distribution surface fits your access model.
+Open [http://localhost:3040](http://localhost:3040).
 
 ## Validate changes
 
@@ -67,20 +53,8 @@ npm ci --ignore-scripts --prefix .github/thally-tooling
 .github/thally-tooling/node_modules/.bin/thally check --ci .
 ```
 
-## Deploy
+## Credits and license
 
-The site is a standard Next.js application. Deploy it through Thally Cloud or
-any compatible Next.js host. Cloudflare Workers configuration is included in
-`open-next.config.ts` and `wrangler.jsonc`.
-
-Thally Cloud publishes an immutable managed site release and activates it by
-moving the site's production pointer only after validation. Direct hosts use
-their own release and rollback mechanisms; publishing a package or synchronizing
-this starter does not move an existing site's pointer.
-
-Copy `.env.example` to `.env.local` only when you need optional services. Never
-commit real credentials.
-
-## License
-
-[MIT](LICENSE)
+Scaffolded with `create-thally-docs` 0.10.37. Site code is MIT licensed; see
+[LICENSE](LICENSE). GitLite and Gitea are MIT licensed; see the
+[GitLite NOTICE](https://github.com/vaibhav700c/gitlite/blob/main/NOTICE.md).

@@ -17,54 +17,46 @@
   },
   "navbar": {
     "primary": {
-      "label": "Get started",
+      "label": "Quickstart",
       "href": "/quickstart"
     }
   },
   "tabs": [
     {
-      "tab": "Get started",
+      "tab": "Documentation",
       "groups": [
         {
-          "group": "Get started",
+          "group": "Getting Started",
           "pages": [
             "introduction",
-            "quickstart"
+            "quickstart",
+            "authentication",
+            "pagination"
           ]
         },
         {
-          "group": "Design your docs",
+          "group": "Guides",
           "pages": [
-            "components",
-            "customization"
+            "guides/errors",
+            "guides/rate-limits",
+            "guides/webhooks",
+            "guides/deployment"
+          ]
+        },
+        {
+          "group": "Reference",
+          "pages": [
+            "api/repositories",
+            "api/issues",
+            "api/organizations",
+            "reference/configuration-api"
           ]
         }
       ]
     },
     {
-      "tab": "Guides",
-      "groups": [
-        {
-          "group": "Work with Thally",
-          "pages": [
-            "guides/create-a-site",
-            "guides/work-with-the-cli",
-            "guides/connect-ai-tools"
-          ]
-        }
-      ]
-    },
-    {
-      "tab": "API Reference",
-      "groups": [
-        {
-          "group": "Overview",
-          "pages": [
-            "api/introduction",
-            "api/authentication"
-          ]
-        }
-      ],
+      "tab": "API Explorer",
+      "groups": [],
       "api": {
         "source": "openapi.yaml"
       }

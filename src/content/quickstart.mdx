@@ -1,47 +1,98 @@
 ---
 title: Quickstart
-description: Guide a new reader through one useful workflow and show them how to verify it.
+description: Make your first authenticated GitLite API call and create a repository in about a minute.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - services/auth/oauth2.go
+  - modules/auth/httpauth/httpauth.go
+  - routers/api/v1/api.go
+  - templates/swagger/v1_json.tmpl
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
 ---
 
-A strong quickstart produces one meaningful result. Replace the placeholders
-below with the shortest supported path for your product.
+You will create an access token, confirm who you are authenticated as, and create
+a repository through the API.
 
 ## Before you begin
 
-List only the requirements needed for this workflow:
-
-- An account or credential, when required
-- A supported runtime, device, browser, or operating system
-- Permission to create or change the resource used in the example
+- A running GitLite server at `http://localhost:3000`
+- A GitLite user account
+- `curl`, or Node.js 18 or later
 
 <Steps>
-  <Step title="Install the required tool">
-    Give readers one recommended installation command.
+  <Step title="Create an access token">
+    In the GitLite web UI, open **Settings → Applications → Manage Access Tokens**,
+    enter a token name, select the `write:repository` and `read:user` scopes, and
+    select **Generate Token**. Copy the token; GitLite shows it only once.
+
+    Store it in your shell:
 
     ```bash
-    npm install your-package
+    export GITLITE_TOKEN="<your 40-character token>"
     ```
+
+    To create a token from the command line instead, see
+    [Create a token with the API](/authentication#create-a-token-with-the-api).
   </Step>
-  <Step title="Add the minimum configuration">
-    Include only the values needed for the first successful run.
+  <Step title="Make your first authenticated request">
+    Send the token in the `Authorization` header, prefixed with the word `token`
+    and a space.
 
-    ```bash
-    your-cli init
-    ```
+    <Tabs>
+      <Tab title="curl">
+        ```bash
+        curl -s http://localhost:3000/api/v1/user \
+          -H "Authorization: token $GITLITE_TOKEN"
+        ```
+      </Tab>
+      <Tab title="JavaScript">
+        ```js
+        const res = await fetch('http://localhost:3000/api/v1/user', {
+          headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+        })
+        console.log(res.status, (await res.json()).login)
+        ```
+      </Tab>
+    </Tabs>
+
+    A `200 OK` response contains your user object, including `login`.
   </Step>
-  <Step title="Complete the first task">
-    Use a realistic example that produces an observable result.
-
-    ```bash
-    your-cli start
-    ```
+  <Step title="Create a repository">
+    <Tabs>
+      <Tab title="curl">
+        ```bash
+        curl -s -X POST http://localhost:3000/api/v1/user/repos \
+          -H "Authorization: token $GITLITE_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"name": "quickstart-repo", "auto_init": true}'
+        ```
+      </Tab>
+      <Tab title="JavaScript">
+        ```js
+        const res = await fetch('http://localhost:3000/api/v1/user/repos', {
+          method: 'POST',
+          headers: {
+            Authorization: `token ${process.env.GITLITE_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: 'quickstart-repo-js', auto_init: true }),
+        })
+        console.log(res.status, (await res.json()).full_name)
+        ```
+      </Tab>
+    </Tabs>
   </Step>
   <Step title="Verify the result">
-    State exactly what the reader should see and how to recover when it does not appear.
+    A `201 Created` response contains the new repository, and `full_name` is
+    `<your-login>/quickstart-repo`. If you receive `401`, check that the header
+    starts with `token ` and that the token was copied completely. If you receive
+    `403`, the token is missing the `write:repository` scope. See
+    [Handling errors](/guides/errors).
   </Step>
 </Steps>
 
-## Choose the next task
+## Next steps
 
-Link to the guide that naturally follows this result. Avoid ending the reader’s
-journey with a generic list of every feature.
+- List your repositories and read later pages: [Pagination](/pagination)
+- Choose the narrowest scopes for production tokens: [Authentication](/authentication)

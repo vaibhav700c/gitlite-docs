@@ -1,0 +1,163 @@
+---
+title: "API reference: Issues"
+description: List, create, read, and update repository issues with the GitLite REST API.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - routers/api/v1/repo/issue.go
+  - routers/api/v1/utils/page.go
+  - services/auth/oauth2.go
+  - modules/setting/api.go
+  - templates/swagger/v1_json.tmpl
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+All endpoints on this page are relative to `http://localhost:3000/api/v1` and
+require `Authorization: token <token>`. Issues are identified by their
+per-repository `index`, the number shown in the web UI.
+
+| Method | Path | Operation | Scope |
+| --- | --- | --- | --- |
+| `GET` | `/repos/{owner}/{repo}/issues` | List issues | `read:issue` |
+| `POST` | `/repos/{owner}/{repo}/issues` | Create an issue | `write:issue` |
+| `GET` | `/repos/{owner}/{repo}/issues/{index}` | Get an issue | `read:issue` |
+| `PATCH` | `/repos/{owner}/{repo}/issues/{index}` | Edit an issue | `write:issue` |
+
+## List issues
+
+`GET /repos/{owner}/{repo}/issues`
+
+| Query parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | string | `open` | `open`, `closed`, or `all`. |
+| `type` | string | both | `issues` or `pulls`. |
+| `labels` | string | — | Comma-separated label names. |
+| `q` | string | — | Keyword search. |
+| `created_by` | string | — | Only issues opened by this username. |
+| `since`, `before` | date-time | — | Only issues updated in this window (RFC 3339). |
+| `page` | integer | `1` | Page number. |
+| `limit` | integer | `30` | Page size, at most `50`. See [Pagination](/pagination). |
+
+Returns `200` with an array of `Issue` objects and an `X-Total-Count` header.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite/issues?state=all" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(
+      `http://localhost:3000/api/v1/repos/${owner}/hello-gitlite/issues?state=all`,
+      { headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` } },
+    )
+    const issues = await res.json()
+    console.log(res.headers.get('x-total-count'), issues.map((i) => `#${i.number} ${i.title}`))
+    ```
+  </Tab>
+</Tabs>
+
+## Create an issue
+
+`POST /repos/{owner}/{repo}/issues`
+
+| Body field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `title` | string | yes | Issue title. |
+| `body` | string | no | Markdown description. |
+| `assignees` | string[] | no | Usernames to assign. |
+| `labels` | integer[] | no | Label IDs. |
+| `milestone` | integer | no | Milestone ID. |
+| `closed` | boolean | no | Create the issue already closed. |
+
+| Status | Meaning |
+| --- | --- |
+| `201` | Issue created. |
+| `403` | Your token or account cannot write issues in this repository. |
+| `404` | The repository does not exist. |
+| `422` | Validation failed, for example an empty `title`. |
+| `423` | The repository is archived. |
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -X POST "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite/issues" \
+      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"title": "Document the release process", "body": "Steps are missing from the README."}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite/issues`, {
+      method: 'POST',
+      headers: {
+        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title: 'Add a contributing guide' }),
+    })
+    const issue = await res.json()
+    console.log(res.status, issue.number, issue.html_url)
+    ```
+  </Tab>
+</Tabs>
+
+## Get an issue
+
+`GET /repos/{owner}/{repo}/issues/{index}` returns `200` with an `Issue`, or `404`.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite/issues/1" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite/issues/1`, {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    const issue = await res.json()
+    console.log(res.status, issue.title, issue.state)
+    ```
+  </Tab>
+</Tabs>
+
+## Edit an issue
+
+`PATCH /repos/{owner}/{repo}/issues/{index}`
+
+Send only the fields to change: `title`, `body`, `state` (`open` or `closed`),
+`assignees`, `milestone`, or `due_date`. Returns `201` with the updated `Issue`.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -X PATCH "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite/issues/1" \
+      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"state": "closed"}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite/issues/1`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ state: 'open' }),
+    })
+    console.log(res.status, (await res.json()).state)
+    ```
+  </Tab>
+</Tabs>

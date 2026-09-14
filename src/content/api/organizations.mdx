@@ -1,0 +1,131 @@
+---
+title: "API reference: Organizations"
+description: List, create, and read organizations and their repositories with the GitLite REST API.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - routers/api/v1/org/org.go
+  - routers/api/v1/repo/repo.go
+  - services/auth/oauth2.go
+  - templates/swagger/v1_json.tmpl
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+All endpoints on this page are relative to `http://localhost:3000/api/v1` and
+require `Authorization: token <token>`. The examples use an organization named
+`acme`.
+
+| Method | Path | Operation | Scope |
+| --- | --- | --- | --- |
+| `GET` | `/orgs` | List all organizations | `read:organization` |
+| `POST` | `/orgs` | Create an organization | `write:organization` |
+| `GET` | `/orgs/{org}` | Get an organization | `read:organization` |
+| `GET` | `/orgs/{org}/repos` | List an organization's repositories | `read:organization` |
+
+## List organizations
+
+`GET /orgs` accepts `page` and `limit` (default `30`, at most `50`) and returns
+`200` with an array of `Organization` objects visible to you, plus
+`X-Total-Count`. See [Pagination](/pagination).
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s "http://localhost:3000/api/v1/orgs?limit=10" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/orgs?limit=10', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    console.log(res.headers.get('x-total-count'), (await res.json()).map((o) => o.name))
+    ```
+  </Tab>
+</Tabs>
+
+## Create an organization
+
+`POST /orgs`
+
+| Body field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `username` | string | yes | Organization name, used in URLs. |
+| `full_name` | string | no | Display name. |
+| `description` | string | no | Short description. |
+| `visibility` | string | no | `public` (default), `limited`, or `private`. |
+
+| Status | Meaning |
+| --- | --- |
+| `201` | Organization created. You are its owner. |
+| `403` | Your account is not allowed to create organizations. |
+| `422` | Validation failed, or the name is already taken. |
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -X POST http://localhost:3000/api/v1/orgs \
+      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"username": "acme-docs", "full_name": "Acme Documentation", "visibility": "private"}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/orgs', {
+      method: 'POST',
+      headers: {
+        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'acme-docs-js', visibility: 'private' }),
+    })
+    console.log(res.status, (await res.json()).name)
+    ```
+  </Tab>
+</Tabs>
+
+## Get an organization
+
+`GET /orgs/{org}` returns `200` with an `Organization`, or `404`.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s http://localhost:3000/api/v1/orgs/acme \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/orgs/acme', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    const org = await res.json()
+    console.log(res.status, org.name, org.visibility)
+    ```
+  </Tab>
+</Tabs>
+
+## List an organization's repositories
+
+`GET /orgs/{org}/repos` accepts `page` and `limit` and returns `200` with an array
+of `Repository` objects and `X-Total-Count`.
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s "http://localhost:3000/api/v1/orgs/acme/repos?page=1&limit=20" \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/orgs/acme/repos?page=1&limit=20', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    console.log(res.headers.get('x-total-count'), (await res.json()).length)
+    ```
+  </Tab>
+</Tabs>

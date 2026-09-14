@@ -1,0 +1,85 @@
+---
+title: "Configuration reference: [api]"
+description: Every key in the [api] section of GitLite's app.ini, with its default and effect on API clients.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - modules/setting/api.go
+  - custom/conf/app.example.ini
+  - services/convert/utils.go
+  - routers/api/v1/settings/settings.go
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+The `[api]` section of `app.ini` controls the REST API at `/api/v1`. Restart the
+server after changing any key.
+
+## Keys
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ENABLE_SWAGGER` | boolean | `true` | Serves the API explorer at `/api/swagger` and the spec at `/swagger.v1.json`. |
+| `MAX_RESPONSE_ITEMS` | integer | `50` | Maximum items per page on list endpoints. Larger `limit` values are reduced to this number. |
+| `DEFAULT_PAGING_NUM` | integer | `30` | Items per page when a request omits `limit` or sends `limit=0`. |
+| `DEFAULT_GIT_TREES_PER_PAGE` | integer | `1000` | Default and maximum entries per page from the Git trees API. |
+| `DEFAULT_MAX_BLOB_SIZE` | integer (bytes) | `10485760` | Largest blob the blobs API returns (10 MiB). |
+| `DEFAULT_MAX_RESPONSE_SIZE` | integer (bytes) | `104857600` | Largest combined blob size the files API returns (100 MiB). |
+
+Keep `DEFAULT_PAGING_NUM` less than or equal to `MAX_RESPONSE_ITEMS`. GitLite does
+not clamp the default: with a larger default, requests without `limit` receive
+more items than a request with an explicit `limit` can.
+
+Two related keys live in other sections:
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `[security] DISABLE_QUERY_AUTH_TOKEN` | `false` | When `true`, rejects tokens sent as `?token=` or `?access_token=`. See [Authentication](/authentication#other-authentication-methods). |
+| `[server] ROOT_URL` | derived from `PROTOCOL`, `DOMAIN`, `HTTP_PORT` | Base for URLs in `Link` headers, error `url` fields, and `/api/swagger`. |
+
+## Example
+
+```ini
+[api]
+ENABLE_SWAGGER = true
+MAX_RESPONSE_ITEMS = 50
+DEFAULT_PAGING_NUM = 30
+DEFAULT_GIT_TREES_PER_PAGE = 1000
+DEFAULT_MAX_BLOB_SIZE = 10485760
+DEFAULT_MAX_RESPONSE_SIZE = 104857600
+```
+
+## Check the effective values
+
+Clients can read five of these values without admin rights:
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s http://localhost:3000/api/v1/settings/api \
+      -H "Authorization: token $GITLITE_TOKEN"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const res = await fetch('http://localhost:3000/api/v1/settings/api', {
+      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+    })
+    console.log(await res.json())
+    ```
+  </Tab>
+</Tabs>
+
+On a server with default settings the response is:
+
+```json
+{
+  "max_response_items": 50,
+  "default_paging_num": 30,
+  "default_git_trees_per_page": 1000,
+  "default_max_blob_size": 10485760,
+  "default_max_response_size": 104857600
+}
+```
+
+`ENABLE_SWAGGER` is not included. Check it by requesting `/swagger.v1.json`: a
+disabled explorer returns `404`.

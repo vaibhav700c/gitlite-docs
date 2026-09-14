@@ -1,0 +1,83 @@
+---
+title: "Guide: Webhooks"
+description: Receive HTTP callbacks from GitLite when events such as pushes and issue changes happen in a repository.
+lastVerified: 2026-09-15
+verifiedVersion: GitLite 1.27.3
+sources:
+  - routers/api/v1/repo/hook.go
+  - services/webhook/deliver.go
+  - modules/setting/webhook.go
+  - custom/conf/app.example.ini
+verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
+---
+
+A webhook tells GitLite to send an HTTP `POST` to your URL whenever selected
+events happen in a repository.
+
+## Create a webhook
+
+`POST /repos/{owner}/{repo}/hooks` requires the `write:repository` scope.
+
+| Body field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `type` | string | yes | Payload format. Use `gitea` for the native JSON format. Others include `slack`, `discord`, `msteams`, and `matrix`. |
+| `config.url` | string | yes | Destination URL. |
+| `config.content_type` | string | yes | `json` or `form`. |
+| `events` | string[] | no | Events to deliver, such as `push`, `issues`, `pull_request`, or `release`. |
+| `active` | boolean | no | Deliver events immediately. Defaults to `false`. |
+| `authorization_header` | string | no | Sent as the `Authorization` header on each delivery. |
+
+<Tabs>
+  <Tab title="curl">
+    ```bash
+    curl -s -X POST "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite/hooks" \
+      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"type": "gitea", "config": {"url": "https://example.com/gitlite-hook", "content_type": "json"}, "events": ["push", "issues"], "active": true}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```js
+    const owner = process.env.GITLITE_USER
+    const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite/hooks`, {
+      method: 'POST',
+      headers: {
+        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'gitea',
+        config: { url: 'https://example.com/gitlite-hook-js', content_type: 'json' },
+        events: ['push'],
+        active: true,
+      }),
+    })
+    const hook = await res.json()
+    console.log(res.status, hook.id, hook.events)
+    ```
+  </Tab>
+</Tabs>
+
+A `201 Created` response contains the webhook `id`.
+
+## Verify deliveries
+
+Each delivery includes these headers:
+
+| Header | Description |
+| --- | --- |
+| `X-Gitea-Event` | Event name, for example `push`. |
+| `X-Gitea-Delivery` | Unique delivery ID. |
+| `X-Gitea-Event-Type` | Detailed event type, for example `issue_comment`. |
+| `X-Gitea-Signature` | Hex HMAC-SHA256 of the raw body, keyed with the webhook `config.secret`. Empty when no secret is set. |
+
+Set `config.secret` when you create the webhook, then compare the signature in
+your receiver before trusting the payload.
+
+## Delivery rules for operators
+
+Operators control which hosts GitLite may deliver to with
+`[security] ALLOWED_HOST_LIST` in `app.ini`. The default, `external`, allows only
+public internet hosts, so deliveries to `localhost` or LAN addresses are blocked.
+To test against a receiver on `localhost`, set `ALLOWED_HOST_LIST = loopback,external`
+on a development server only.
