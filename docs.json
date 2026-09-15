@@ -68,5 +68,23 @@
   ],
   "ai": {
     "chat": true
+  },
+  "tracking": {
+    "repos": [
+      {
+        "owner": "vaibhav700c",
+        "repo": "gitlite",
+        "branch": "main",
+        "paths": [
+          "services/auth",
+          "modules/setting",
+          "modules/auth",
+          "services/context",
+          "routers/api",
+          "templates/swagger",
+          "custom/conf"
+        ]
+      }
+    ]
   }
 }
