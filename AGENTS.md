@@ -60,4 +60,15 @@ upgrade an existing site or move a production release pointer.
 
 ## Product context
 
-<!-- Add canonical terminology, audience details, and content boundaries here. -->
+These docs describe the GitLite REST API at `/api/v1`. GitLite is a fork of Gitea.
+
+MDX safety rules. A draft that breaks these fails the site build even when `thally check` passes:
+
+- Never write a bare angle-bracket placeholder such as <token> or <sha> in prose, tables, or headings. MDX parses it as an unclosed JSX tag. Always wrap placeholders in backticks, for example `Authorization: Bearer <token>`, or put them inside a fenced code block.
+- Wrap HTTP header lines, header names, and config keys in backticks: `Deprecation: true`, `X-HasMore`, `ALLOW_LEGACY_TOKEN_SCHEME`.
+- Keep the existing Tabs/Tab structure and use one curl example plus one JavaScript example per operation.
+- Keep `lastVerified`, `verifiedVersion`, `sources`, and `verifiedCommit` frontmatter keys. When a page is updated for a product change, set `verifiedCommit` to the product merge commit and `lastVerified` to the update date.
+- Do not edit `src/content/changelog.mdx`. Maintainers write release notes.
+- Pages that do not describe the changed behavior (for example `guides/webhooks`, `guides/deployment`, `introduction`) should stay unchanged.
+
+Terminology: "access token", "authorization scheme", "page size". Code samples target `http://localhost:3000/api/v1` and read the token from `GITLITE_TOKEN`.
