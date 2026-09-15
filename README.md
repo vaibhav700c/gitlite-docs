@@ -12,9 +12,8 @@ Built for the Thally Sync Hackathon 2026, "Keep Product Knowledge Current" track
 
 | Path | Purpose |
 | --- | --- |
-| `src/content/` | 13 MDX pages: quickstart, authentication, pagination, three API reference pages, four guides, `[api]` configuration reference, changelog, introduction. |
+| `src/content/` | 13 MDX pages. Every example reads the `Authorization` header from `GITLITE_AUTH`, so an auth-scheme change edits one line per home page, not every sample: quickstart, authentication, pagination, three API reference pages, four guides, `[api]` configuration reference, changelog, introduction. |
 | `docs.json` | Navigation (Getting Started, Guides, Reference) and site features. |
-| `openapi.yaml` | Subset of the GitLite OpenAPI spec for the documented endpoints, extracted with `verify/extract-openapi.py`. |
 | `verify/` | Runs every `curl` and JavaScript example against a fresh, seeded GitLite server. |
 
 Every page carries `lastVerified`, `verifiedVersion`, and internal `sources` /

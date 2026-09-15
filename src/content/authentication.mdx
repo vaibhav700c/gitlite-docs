@@ -25,17 +25,23 @@ Put the word `token`, a space, and the token value in the `Authorization` header
 Authorization: token 9a7f0c2e...
 ```
 
+The examples in these docs read the complete header value from `GITLITE_AUTH`:
+
+```bash
+export GITLITE_AUTH="token $GITLITE_TOKEN"
+```
+
 <Tabs>
   <Tab title="curl">
     ```bash
     curl -s http://localhost:3000/api/v1/user \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/user', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     console.log(res.status, (await res.json()).login)
     ```

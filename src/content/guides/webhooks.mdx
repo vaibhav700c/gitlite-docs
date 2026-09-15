@@ -31,7 +31,7 @@ events happen in a repository.
   <Tab title="curl">
     ```bash
     curl -s -X POST "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite/hooks" \
-      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Authorization: $GITLITE_AUTH" \
       -H "Content-Type: application/json" \
       -d '{"type": "gitea", "config": {"url": "https://example.com/gitlite-hook", "content_type": "json"}, "events": ["push", "issues"], "active": true}'
     ```
@@ -42,7 +42,7 @@ events happen in a repository.
     const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite/hooks`, {
       method: 'POST',
       headers: {
-        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        Authorization: process.env.GITLITE_AUTH,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

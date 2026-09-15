@@ -14,7 +14,8 @@ verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
 ---
 
 All endpoints on this page are relative to `http://localhost:3000/api/v1` and
-require `Authorization: token <token>`. See [Authentication](/authentication).
+require an access token in the `Authorization` header, set up as `GITLITE_AUTH` in
+[Authentication](/authentication).
 
 | Method | Path | Operation | Scope |
 | --- | --- | --- | --- |
@@ -34,7 +35,7 @@ The examples use a repository named `hello-gitlite` owned by the user in
 | Query parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `page` | integer | `1` | Page number. |
-| `limit` | integer | `30` | Page size, at most `50`. See [Pagination](/pagination). |
+| `limit` | integer | server default | Page size, capped at the server maximum. See [Pagination](/pagination) for both values. |
 
 Returns `200` with an array of `Repository` objects. The response carries
 `X-Total-Count` and, when there is more than one page, `Link`.
@@ -43,13 +44,13 @@ Returns `200` with an array of `Repository` objects. The response carries
   <Tab title="curl">
     ```bash
     curl -s "http://localhost:3000/api/v1/user/repos?limit=5" \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/user/repos?limit=5', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     const repos = await res.json()
     console.log(res.headers.get('x-total-count'), repos.map((r) => r.full_name))
@@ -79,7 +80,7 @@ Returns `200` with an array of `Repository` objects. The response carries
   <Tab title="curl">
     ```bash
     curl -s -X POST http://localhost:3000/api/v1/user/repos \
-      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Authorization: $GITLITE_AUTH" \
       -H "Content-Type: application/json" \
       -d '{"name": "reference-repo", "description": "Created from the API reference", "private": true}'
     ```
@@ -89,7 +90,7 @@ Returns `200` with an array of `Repository` objects. The response carries
     const res = await fetch('http://localhost:3000/api/v1/user/repos', {
       method: 'POST',
       headers: {
-        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        Authorization: process.env.GITLITE_AUTH,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ name: 'reference-repo-js', private: true }),
@@ -110,14 +111,14 @@ exist or your token cannot see it.
   <Tab title="curl">
     ```bash
     curl -s "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite" \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const owner = process.env.GITLITE_USER
     const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite`, {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     const repo = await res.json()
     console.log(res.status, repo.full_name, repo.default_branch)
@@ -137,7 +138,7 @@ updated `Repository`.
   <Tab title="curl">
     ```bash
     curl -s -X PATCH "http://localhost:3000/api/v1/repos/$GITLITE_USER/hello-gitlite" \
-      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Authorization: $GITLITE_AUTH" \
       -H "Content-Type: application/json" \
       -d '{"description": "Updated from the API"}'
     ```
@@ -148,7 +149,7 @@ updated `Repository`.
     const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/hello-gitlite`, {
       method: 'PATCH',
       headers: {
-        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        Authorization: process.env.GITLITE_AUTH,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ website: 'https://example.com' }),
@@ -168,7 +169,7 @@ permanent and removes the Git data, issues, and wiki.
     ```bash
     curl -s -o /dev/null -w "%{http_code}\n" -X DELETE \
       "http://localhost:3000/api/v1/repos/$GITLITE_USER/reference-repo" \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
@@ -176,7 +177,7 @@ permanent and removes the Git data, issues, and wiki.
     const owner = process.env.GITLITE_USER
     const res = await fetch(`http://localhost:3000/api/v1/repos/${owner}/reference-repo-js`, {
       method: 'DELETE',
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     console.log(res.status)
     ```

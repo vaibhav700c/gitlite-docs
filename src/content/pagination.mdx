@@ -32,13 +32,13 @@ change them, so read the effective values from the server when it matters:
   <Tab title="curl">
     ```bash
     curl -s http://localhost:3000/api/v1/settings/api \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/settings/api', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     const { default_paging_num, max_response_items } = await res.json()
     console.log({ default_paging_num, max_response_items })
@@ -91,7 +91,7 @@ Follow `rel="next"` until it is absent.
   <Tab title="curl">
     ```bash
     curl -s -D - -o /dev/null "http://localhost:3000/api/v1/user/repos?page=1&limit=10" \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
@@ -100,7 +100,7 @@ Follow `rel="next"` until it is absent.
     const all = []
     while (url) {
       const res = await fetch(url, {
-        headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+        headers: { Authorization: process.env.GITLITE_AUTH },
       })
       all.push(...(await res.json()))
       url = res.headers.get('link')?.match(/<([^>]+)>;\s*rel="next"/)?.[1]

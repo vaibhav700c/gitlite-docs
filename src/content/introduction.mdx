@@ -48,11 +48,8 @@ system, not the fork, is the work this project demonstrates.
 ## Conventions used in these docs
 
 Every example targets a local server at `http://localhost:3000/api/v1` and reads
-your token from the `GITLITE_TOKEN` environment variable:
-
-```bash
-export GITLITE_TOKEN="<your 40-character token>"
-```
+the full `Authorization` header value from the `GITLITE_AUTH` environment variable.
+The [Quickstart](/quickstart) shows how to set it.
 
 Each example is shown as a `curl` command and as JavaScript that runs on Node.js 18
 or later with no extra packages.

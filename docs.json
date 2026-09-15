@@ -55,13 +55,6 @@
       ]
     },
     {
-      "tab": "API Explorer",
-      "groups": [],
-      "api": {
-        "source": "openapi.yaml"
-      }
-    },
-    {
       "tab": "Changelog",
       "href": "/changelog"
     }

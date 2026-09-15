@@ -44,13 +44,13 @@ Confirm the cap on your server:
   <Tab title="curl">
     ```bash
     curl -s "http://localhost:3000/api/v1/user/repos?limit=1000" \
-      -H "Authorization: token $GITLITE_TOKEN" | grep -o '"full_name"' | wc -l
+      -H "Authorization: $GITLITE_AUTH" | grep -o '"full_name"' | wc -l
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/user/repos?limit=1000', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     const repos = await res.json()
     console.log(`asked for 1000, received ${repos.length} of ${res.headers.get('x-total-count')}`)

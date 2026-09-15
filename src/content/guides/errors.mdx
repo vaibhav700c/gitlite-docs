@@ -54,7 +54,7 @@ Every authentication failure returns `401` with one of these messages.
 | Request | `message` |
 | --- | --- |
 | No `Authorization` header on an endpoint that requires a token | `token is required` |
-| `Authorization: token <value>` where the token does not exist | `invalid username, password or token` |
+| `Authorization` header with a token that does not exist | `invalid username, password or token` |
 | Basic authentication with a wrong password | `invalid username, password or token` |
 
 Reproduce both cases:
@@ -64,12 +64,13 @@ Reproduce both cases:
     ```bash
     curl -s -w "\n%{http_code}\n" http://localhost:3000/api/v1/user
     curl -s -w "\n%{http_code}\n" http://localhost:3000/api/v1/user \
-      -H "Authorization: token 0000000000000000000000000000000000000000"
+      -H "Authorization: ${GITLITE_AUTH%% *} 0000000000000000000000000000000000000000"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
-    for (const headers of [{}, { Authorization: 'token 0000000000000000000000000000000000000000' }]) {
+    const scheme = process.env.GITLITE_AUTH.split(' ')[0]
+    for (const headers of [{}, { Authorization: `${scheme} 0000000000000000000000000000000000000000` }]) {
       const res = await fetch('http://localhost:3000/api/v1/user', { headers })
       console.log(res.status, (await res.json()).message)
     }
@@ -90,7 +91,7 @@ A valid token that lacks a scope returns `403`, not `401`. See
     ```bash
     status=$(curl -s -o response.json -w "%{http_code}" \
       http://localhost:3000/api/v1/repos/$GITLITE_USER/does-not-exist \
-      -H "Authorization: token $GITLITE_TOKEN")
+      -H "Authorization: $GITLITE_AUTH")
     if [ "$status" -ge 400 ]; then echo "GitLite error $status: $(cat response.json)"; fi
     rm -f response.json
     ```
@@ -100,7 +101,7 @@ A valid token that lacks a scope returns `403`, not `401`. See
     async function gitlite(path, init = {}) {
       const res = await fetch(`http://localhost:3000/api/v1${path}`, {
         ...init,
-        headers: { Authorization: `token ${process.env.GITLITE_TOKEN}`, ...init.headers },
+        headers: { Authorization: process.env.GITLITE_AUTH, ...init.headers },
       })
       if (!res.ok) {
         const { message } = await res.json().catch(() => ({}))

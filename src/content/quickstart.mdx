@@ -30,7 +30,11 @@ a repository through the API.
 
     ```bash
     export GITLITE_TOKEN="<your 40-character token>"
+    export GITLITE_AUTH="token $GITLITE_TOKEN"
     ```
+
+    Every example in these docs sends `Authorization: $GITLITE_AUTH`, so the
+    authorization scheme is set in this one place.
 
     To create a token from the command line instead, see
     [Create a token with the API](/authentication#create-a-token-with-the-api).
@@ -43,13 +47,13 @@ a repository through the API.
       <Tab title="curl">
         ```bash
         curl -s http://localhost:3000/api/v1/user \
-          -H "Authorization: token $GITLITE_TOKEN"
+          -H "Authorization: $GITLITE_AUTH"
         ```
       </Tab>
       <Tab title="JavaScript">
         ```js
         const res = await fetch('http://localhost:3000/api/v1/user', {
-          headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+          headers: { Authorization: process.env.GITLITE_AUTH },
         })
         console.log(res.status, (await res.json()).login)
         ```
@@ -63,7 +67,7 @@ a repository through the API.
       <Tab title="curl">
         ```bash
         curl -s -X POST http://localhost:3000/api/v1/user/repos \
-          -H "Authorization: token $GITLITE_TOKEN" \
+          -H "Authorization: $GITLITE_AUTH" \
           -H "Content-Type: application/json" \
           -d '{"name": "quickstart-repo", "auto_init": true}'
         ```
@@ -73,7 +77,7 @@ a repository through the API.
         const res = await fetch('http://localhost:3000/api/v1/user/repos', {
           method: 'POST',
           headers: {
-            Authorization: `token ${process.env.GITLITE_TOKEN}`,
+            Authorization: process.env.GITLITE_AUTH,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ name: 'quickstart-repo-js', auto_init: true }),

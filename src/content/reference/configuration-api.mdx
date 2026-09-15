@@ -56,13 +56,13 @@ Clients can read five of these values without admin rights:
   <Tab title="curl">
     ```bash
     curl -s http://localhost:3000/api/v1/settings/api \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/settings/api', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     console.log(await res.json())
     ```

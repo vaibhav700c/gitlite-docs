@@ -12,7 +12,8 @@ verifiedCommit: 5d969a41a0ffde424f45c730f0a6928bc5dae56f
 ---
 
 All endpoints on this page are relative to `http://localhost:3000/api/v1` and
-require `Authorization: token <token>`. The examples use an organization named
+require an access token in the `Authorization` header, set up as `GITLITE_AUTH` in
+[Authentication](/authentication). The examples use an organization named
 `acme`.
 
 | Method | Path | Operation | Scope |
@@ -24,7 +25,8 @@ require `Authorization: token <token>`. The examples use an organization named
 
 ## List organizations
 
-`GET /orgs` accepts `page` and `limit` (default `30`, at most `50`) and returns
+`GET /orgs` accepts `page` and `limit` (default and maximum page size are on
+[Pagination](/pagination)) and returns
 `200` with an array of `Organization` objects visible to you, plus
 `X-Total-Count`. See [Pagination](/pagination).
 
@@ -32,13 +34,13 @@ require `Authorization: token <token>`. The examples use an organization named
   <Tab title="curl">
     ```bash
     curl -s "http://localhost:3000/api/v1/orgs?limit=10" \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/orgs?limit=10', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     console.log(res.headers.get('x-total-count'), (await res.json()).map((o) => o.name))
     ```
@@ -66,7 +68,7 @@ require `Authorization: token <token>`. The examples use an organization named
   <Tab title="curl">
     ```bash
     curl -s -X POST http://localhost:3000/api/v1/orgs \
-      -H "Authorization: token $GITLITE_TOKEN" \
+      -H "Authorization: $GITLITE_AUTH" \
       -H "Content-Type: application/json" \
       -d '{"username": "acme-docs", "full_name": "Acme Documentation", "visibility": "private"}'
     ```
@@ -76,7 +78,7 @@ require `Authorization: token <token>`. The examples use an organization named
     const res = await fetch('http://localhost:3000/api/v1/orgs', {
       method: 'POST',
       headers: {
-        Authorization: `token ${process.env.GITLITE_TOKEN}`,
+        Authorization: process.env.GITLITE_AUTH,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ username: 'acme-docs-js', visibility: 'private' }),
@@ -94,13 +96,13 @@ require `Authorization: token <token>`. The examples use an organization named
   <Tab title="curl">
     ```bash
     curl -s http://localhost:3000/api/v1/orgs/acme \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/orgs/acme', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     const org = await res.json()
     console.log(res.status, org.name, org.visibility)
@@ -117,13 +119,13 @@ of `Repository` objects and `X-Total-Count`.
   <Tab title="curl">
     ```bash
     curl -s "http://localhost:3000/api/v1/orgs/acme/repos?page=1&limit=20" \
-      -H "Authorization: token $GITLITE_TOKEN"
+      -H "Authorization: $GITLITE_AUTH"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```js
     const res = await fetch('http://localhost:3000/api/v1/orgs/acme/repos?page=1&limit=20', {
-      headers: { Authorization: `token ${process.env.GITLITE_TOKEN}` },
+      headers: { Authorization: process.env.GITLITE_AUTH },
     })
     console.log(res.headers.get('x-total-count'), (await res.json()).length)
     ```

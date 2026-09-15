@@ -62,6 +62,23 @@ upgrade an existing site or move a production release pointer.
 
 These docs describe the GitLite REST API at `/api/v1`. GitLite is a fork of Gitea.
 
+Knowledge map. Each product fact has exactly one home page. Update the home and leave pages that only link to it alone:
+
+| Product fact | Home page(s) | Pages that only reference it |
+| --- | --- | --- |
+| Authorization scheme, including the `GITLITE_AUTH` value and deprecation or sunset headers | `authentication`, `quickstart` | all API reference pages and guides, which use `$GITLITE_AUTH` |
+| Authentication error messages (`401` bodies) | `guides/errors` | `authentication` |
+| Default and maximum page size, pagination response headers | `pagination` | `api/*` pages, which link to Pagination |
+| `[api]` settings and defaults, including new keys | `reference/configuration-api` | `guides/rate-limits` (defaults table) |
+| Response size caps | `guides/rate-limits` | none |
+
+Working efficiently:
+
+- Every code example reads the header from `$GITLITE_AUTH` or `process.env.GITLITE_AUTH`. A scheme change is a one-line edit to the `export GITLITE_AUTH=...` line on the home pages. Do not rewrite individual examples.
+- Read only the home pages named above for the fact being changed. Do not read every page.
+- When a page needs more than three separate span edits, make one `update_page` call instead of many `replace_page_text` calls.
+- There is no OpenAPI file in this repository. Do not look for one.
+
 MDX safety rules. A draft that breaks these fails the site build even when `thally check` passes:
 
 - Never write a bare angle-bracket placeholder such as <token> or <sha> in prose, tables, or headings. MDX parses it as an unclosed JSX tag. Always wrap placeholders in backticks, for example `Authorization: Bearer <token>`, or put them inside a fenced code block.
