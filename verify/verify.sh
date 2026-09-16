@@ -36,7 +36,7 @@ export GITLITE_USER=docs-demo GITLITE_PASSWORD='docs-demo-pass-1!'
 GITLITE_TOKEN=$("$src/gitea" admin user generate-access-token -c "$work/custom/conf/app.ini" \
   --username "$GITLITE_USER" --token-name verify --scopes all --raw)
 export GITLITE_TOKEN
-export GITLITE_AUTH="token $GITLITE_TOKEN"
+export GITLITE_AUTH="Bearer $GITLITE_TOKEN"
 
 "$src/gitea" web -c "$work/custom/conf/app.ini" >"$work/server.out" 2>&1 &
 server=$!
