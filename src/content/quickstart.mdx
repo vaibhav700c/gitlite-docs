@@ -30,7 +30,7 @@ a repository through the API.
 
     ```bash
     export GITLITE_TOKEN="<your 40-character token>"
-    export GITLITE_AUTH="token $GITLITE_TOKEN"
+    export GITLITE_AUTH="Bearer $GITLITE_TOKEN"
     ```
 
     Every example in these docs sends `Authorization: $GITLITE_AUTH`, so the
@@ -40,7 +40,7 @@ a repository through the API.
     [Create a token with the API](/authentication#create-a-token-with-the-api).
   </Step>
   <Step title="Make your first authenticated request">
-    Send the token in the `Authorization` header, prefixed with the word `token`
+    Send the token in the `Authorization` header, prefixed with the word `Bearer`
     and a space.
 
     <Tabs>
@@ -90,7 +90,7 @@ a repository through the API.
   <Step title="Verify the result">
     A `201 Created` response contains the new repository, and `full_name` is
     `<your-login>/quickstart-repo`. If you receive `401`, check that the header
-    starts with `token ` and that the token was copied completely. If you receive
+    starts with `Bearer ` and that the token was copied completely. If you receive
     `403`, the token is missing the `write:repository` scope. See
     [Handling errors](/guides/errors).
   </Step>

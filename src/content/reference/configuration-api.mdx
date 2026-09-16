@@ -19,11 +19,12 @@ server after changing any key.
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `ENABLE_SWAGGER` | boolean | `true` | Serves the API explorer at `/api/swagger` and the spec at `/swagger.v1.json`. |
-| `MAX_RESPONSE_ITEMS` | integer | `50` | Maximum items per page on list endpoints. Larger `limit` values are reduced to this number. |
-| `DEFAULT_PAGING_NUM` | integer | `30` | Items per page when a request omits `limit` or sends `limit=0`. |
+| `MAX_RESPONSE_ITEMS` | integer | `25` | Maximum items per page on list endpoints. Larger `limit` values are reduced to this number. |
+| `DEFAULT_PAGING_NUM` | integer | `20` | Items per page when a request omits `limit` or sends `limit=0`. |
 | `DEFAULT_GIT_TREES_PER_PAGE` | integer | `1000` | Default and maximum entries per page from the Git trees API. |
 | `DEFAULT_MAX_BLOB_SIZE` | integer (bytes) | `10485760` | Largest blob the blobs API returns (10 MiB). |
 | `DEFAULT_MAX_RESPONSE_SIZE` | integer (bytes) | `104857600` | Largest combined blob size the files API returns (100 MiB). |
+| `ALLOW_LEGACY_TOKEN_SCHEME` | boolean | `true` | Accept the deprecated `Authorization: token <token>` scheme. When `true`, such requests succeed but responses carry `Deprecation`, `Sunset`, and `Warning` headers. When `false`, they are rejected with `401`. See [Authentication](/authentication#send-a-token-in-the-authorization-header). |
 
 Keep `DEFAULT_PAGING_NUM` less than or equal to `MAX_RESPONSE_ITEMS`. GitLite does
 not clamp the default: with a larger default, requests without `limit` receive
@@ -41,11 +42,12 @@ Two related keys live in other sections:
 ```ini
 [api]
 ENABLE_SWAGGER = true
-MAX_RESPONSE_ITEMS = 50
-DEFAULT_PAGING_NUM = 30
+MAX_RESPONSE_ITEMS = 25
+DEFAULT_PAGING_NUM = 20
 DEFAULT_GIT_TREES_PER_PAGE = 1000
 DEFAULT_MAX_BLOB_SIZE = 10485760
 DEFAULT_MAX_RESPONSE_SIZE = 104857600
+ALLOW_LEGACY_TOKEN_SCHEME = true
 ```
 
 ## Check the effective values
@@ -73,13 +75,14 @@ On a server with default settings the response is:
 
 ```json
 {
-  "max_response_items": 50,
-  "default_paging_num": 30,
+  "max_response_items": 25,
+  "default_paging_num": 20,
   "default_git_trees_per_page": 1000,
   "default_max_blob_size": 10485760,
   "default_max_response_size": 104857600
 }
 ```
 
-`ENABLE_SWAGGER` is not included. Check it by requesting `/swagger.v1.json`: a
-disabled explorer returns `404`.
+`ENABLE_SWAGGER` and `ALLOW_LEGACY_TOKEN_SCHEME` are not included. Check
+`ENABLE_SWAGGER` by requesting `/swagger.v1.json`: a disabled explorer returns
+`404`.

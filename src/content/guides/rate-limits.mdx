@@ -31,8 +31,8 @@ with default settings:
 
 | Setting | Default | Effect on clients |
 | --- | --- | --- |
-| `[api] MAX_RESPONSE_ITEMS` | `50` | A `limit` above `50` is reduced to `50` without an error. |
-| `[api] DEFAULT_PAGING_NUM` | `30` | Requests without `limit` receive up to `30` items. |
+| `[api] MAX_RESPONSE_ITEMS` | `25` | A `limit` above `25` is reduced to `25` without an error. |
+| `[api] DEFAULT_PAGING_NUM` | `20` | Requests without `limit` receive up to `20` items. |
 
 Because the cap is silent, never infer "no more data" from a page that is shorter
 than the `limit` you asked for. Use `X-Total-Count` or the `Link` header as
@@ -58,8 +58,8 @@ Confirm the cap on your server:
   </Tab>
 </Tabs>
 
-For a user with 35 repositories, both examples report 35 items: all of them fit
-under the cap of 50. With more than 50 repositories, the response stops at 50.
+For a user with 24 repositories, both examples report 24 items: all of them fit
+under the cap of 25. With more than 25 repositories, the response stops at 25.
 
 ## Git data size
 

@@ -1,6 +1,6 @@
 ---
 title: Pagination
-description: Read long lists from the GitLite API with page and limit, and use the Link and X-Total-Count headers.
+description: Read long lists from the GitLite API with page and limit, and use the Link, X-Total-Count, X-Page, X-PerPage, and X-HasMore headers.
 lastVerified: 2026-09-15
 verifiedVersion: GitLite 1.27.3
 sources:
@@ -22,9 +22,9 @@ in response headers.
 | Parameter | Type | Default | Behavior |
 | --- | --- | --- | --- |
 | `page` | integer | `1` | 1-based page number. Values below `1` are treated as `1`. |
-| `limit` | integer | `30` | Items per page. Values of `0` or less use the default of `30`. Values above `50` are reduced to `50`. |
+| `limit` | integer | `20` | Items per page. Values of `0` or less use the default of `20`. Values above `25` are reduced to `25`. |
 
-The default (`30`) and the maximum (`50`) come from the server's
+The default (`20`) and the maximum (`25`) come from the server's
 `[api] DEFAULT_PAGING_NUM` and `[api] MAX_RESPONSE_ITEMS` settings. Operators can
 change them, so read the effective values from the server when it matters:
 
@@ -50,8 +50,8 @@ On a server with default settings the response is:
 
 ```json
 {
-  "max_response_items": 50,
-  "default_paging_num": 30,
+  "max_response_items": 25,
+  "default_paging_num": 20,
   "default_git_trees_per_page": 1000,
   "default_max_blob_size": 10485760,
   "default_max_response_size": 104857600
@@ -60,7 +60,7 @@ On a server with default settings the response is:
 
 <Tip>
   A `limit` above the maximum does not return an error. GitLite silently returns
-  at most `50` items, so do not assume a short page means you reached the end.
+  at most `25` items, so do not assume a short page means you reached the end.
   Use the headers below instead.
 </Tip>
 
@@ -69,17 +69,24 @@ On a server with default settings the response is:
 | Header | Example | Meaning |
 | --- | --- | --- |
 | `X-Total-Count` | `35` | Total number of items across all pages. |
+| `X-Page` | `1` | The current 1-based page number. |
+| `X-PerPage` | `20` | The page size used for this response. |
+| `X-HasMore` | `true` | Whether more pages exist after the current one. |
 | `Link` | `<http://localhost:3000/api/v1/user/repos?page=2>; rel="next"` | URLs for the `next`, `last`, `first`, and `prev` pages. Relations that do not apply are omitted. |
-| `Access-Control-Expose-Headers` | `Link, X-Total-Count` | Lets browser clients read the two headers above. |
+| `Access-Control-Expose-Headers` | `Link, X-Total-Count, X-Page, X-PerPage, X-HasMore` | Lets browser clients read the headers above. |
 
 `X-Total-Count` is set on list endpoints that count their results. `Link` is set
-only when there is more than one page.
+only when there is more than one page. `X-Page`, `X-PerPage`, and `X-HasMore` are
+set on every paginated response.
 
 For example, a user with 35 repositories requesting `/user/repos` with no
-parameters receives 30 repositories and these headers:
+parameters receives 20 repositories and these headers:
 
 ```text
 X-Total-Count: 35
+X-Page: 1
+X-PerPage: 20
+X-HasMore: true
 Link: <http://localhost:3000/api/v1/user/repos?page=2>; rel="next",<http://localhost:3000/api/v1/user/repos?page=2>; rel="last"
 ```
 
@@ -96,7 +103,7 @@ Follow `rel="next"` until it is absent.
   </Tab>
   <Tab title="JavaScript">
     ```js
-    let url = 'http://localhost:3000/api/v1/user/repos?limit=50'
+    let url = 'http://localhost:3000/api/v1/user/repos?limit=25'
     const all = []
     while (url) {
       const res = await fetch(url, {
