@@ -56,6 +56,7 @@ Every authentication failure returns `401` with one of these messages.
 | No `Authorization` header on an endpoint that requires a token | `token is required` |
 | `Authorization` header with a token that does not exist | `invalid username, password or token` |
 | Basic authentication with a wrong password | `invalid username, password or token` |
+| `Authorization: token <token>` when `ALLOW_LEGACY_TOKEN_SCHEME` is `false` | `the 'token' authorization scheme is disabled; use 'Authorization: Bearer <token>'` |
 
 Reproduce both cases:
 

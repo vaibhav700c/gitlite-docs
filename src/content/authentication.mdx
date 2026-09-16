@@ -19,16 +19,16 @@ user, grant it scopes, and send it with every request.
 
 ## Send a token in the Authorization header
 
-Put the word `token`, a space, and the token value in the `Authorization` header:
+Put the word `Bearer`, a space, and the token value in the `Authorization` header:
 
 ```text
-Authorization: token 9a7f0c2e...
+Authorization: Bearer 9a7f0c2e...
 ```
 
 The examples in these docs read the complete header value from `GITLITE_AUTH`:
 
 ```bash
-export GITLITE_AUTH="token $GITLITE_TOKEN"
+export GITLITE_AUTH="Bearer $GITLITE_TOKEN"
 ```
 
 <Tabs>
@@ -49,9 +49,22 @@ export GITLITE_AUTH="token $GITLITE_TOKEN"
 </Tabs>
 
 The API spec describes this scheme as `AuthorizationHeaderToken`: "API tokens must
-be prepended with `token` followed by a space." GitLite also accepts `Bearer` in
-place of `token`, which is how OAuth2 clients usually send access tokens. Both
-prefixes are case-insensitive and behave identically.
+be prepended with `Bearer` followed by a space." Both `Bearer` and `token` prefixes
+are case-insensitive, but the `token` prefix is **deprecated**. Both prefixes still
+authenticate the request; however, requests that use the `token` prefix receive
+three extra response headers:
+
+| Header | Value |
+| --- | --- |
+| `Deprecation` | `true` |
+| `Sunset` | `Wed, 01 Apr 2026 00:00:00 GMT` |
+| `Warning` | `299 - "The 'token' authorization scheme is deprecated; use 'Authorization: Bearer <token>'"` |
+
+Operators can reject the `token` prefix entirely by setting
+`[api] ALLOW_LEGACY_TOKEN_SCHEME = false` in `app.ini`. When disabled, requests
+using the `token` prefix return `401` with the message
+`"the 'token' authorization scheme is disabled; use 'Authorization: Bearer <token>'"`.
+See [Configuration: `[api]`](/reference/configuration-api) for details.
 
 Requests without credentials to an endpoint that requires them return `401` with
 `"message": "token is required"`.
